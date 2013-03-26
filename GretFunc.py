@@ -115,6 +115,7 @@ def RandNet(Matrix , NetAlgorithm=0):
 def Clustercoeff(Matrix , Algorithm=0):
     if Algorithm==1:
         W=Matrix.copy()
+        W=W/W.max()
         A=W.astype("bool").astype("float")
         S=W**(1./3)+(W.conj().transpose())**(1./3)
         
