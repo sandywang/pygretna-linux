@@ -67,7 +67,8 @@ class Input(Frame):
 
     def Select(self):
         fname=askopenfilenames(title="Select Networks",
-                filetypes = [("Brain Network","*.txt")],
+                filetypes = [("Brain Network","*.txt"),
+                    ("All Files","*.*")],
                 initialdir=self.text.get())
         if fname:
             if platform.system()=="Windows":

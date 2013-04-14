@@ -156,7 +156,19 @@ class GretProcess(Process):
                         Mode, Para,
                         t, Range[t],
                         R, queue)
+                print("Fork --> Subject: %s @ [Threshold: %2.2f] Real Network"\
+                    % (Subj, Range[t]))
+                queue.put("Done --> Subject: %s @ [Threshold: %2.2f] Real Network"\
+                    % (Subj, Range[t]))
+                p.start()
                 P.append(p)
+                while queue.full():
+                    #P.reverse()
+                    #P.pop().join()
+                    #P.reverse()
+                    for p in P:
+                        p.join()
+                    P=[]
                 if RandState:
                     for rn in range(NumRand):
                         p=RandProcess(M, Subj,
@@ -164,13 +176,25 @@ class GretProcess(Process):
                                 t, Range[t], 
                                 NumRand, rn,
                                 R, queue)
+                        print("Fork --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
+                            % (Subj, Range[t], rn+1))
+                        queue.put("Done --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
+                            % (Subj, Range[t], rn+1))
+                        p.start()
                         P.append(p)
+                        while queue.full():
+                            #P.reverse()
+                            #P.pop().join()
+                            #P.reverse()
+                            for p in P:
+                                p.join()
+                            P=[]    
             #Start Process
-            for p in P:
-                p.start()
+            #for p in P:
+            #    p.start()
 
-            while not queue.empty():
-                pass
+            #while not queue.empty():
+            #    pass
 
             for p in P:
                 p.join()
@@ -227,11 +251,6 @@ class RealProcess(Process):
                 Para['ThresType'],
                 Para['IsNormalize'])
         N=M.shape[0]
-
-        self.Q.put("Done --> Subject: %s @ [Threshold: %2.2f] Real Network"\
-                % (self.Subj, self.Thr))
-        print("Fork --> Subject: %s @ [Threshold: %2.2f] Real Network"\
-                % (self.Subj, self.Thr))
 
         if State[0]:
             Cp=Clustercoeff(M, Para['ClusterAlgor'])
@@ -358,11 +377,6 @@ class RandProcess(Process):
                 Para['IsNormalize'])
         M=RandNet(M, Para['RandGen'])
         N=M.shape[0]
-
-        self.Q.put("Done --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
-                % (self.Subj, self.Thr, Nr+1))
-        print("Fork --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
-                % (self.Subj, self.Thr, Nr+1))
 
         if State[0]:
             Cp=Clustercoeff(M, 
