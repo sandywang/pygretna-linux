@@ -189,12 +189,6 @@ class GretProcess(Process):
                             for p in P:
                                 p.join()
                             P=[]    
-            #Start Process
-            #for p in P:
-            #    p.start()
-
-            #while not queue.empty():
-            #    pass
 
             for p in P:
                 p.join()
