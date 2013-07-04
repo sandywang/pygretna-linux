@@ -115,7 +115,6 @@ def RandNet(Matrix , NetAlgorithm=0):
 def Clustercoeff(Matrix , Algorithm=0):
     if Algorithm==1:
         W=Matrix.copy()
-        W=W/W.max()
         A=W.astype("bool").astype("float")
         S=W**(1./3)+(W.conj().transpose())**(1./3)
         
@@ -380,5 +379,7 @@ def Betweenness(Matrix):
 if __name__=='__main__':
     print('Begin')
     M=Read("p001.txt")
-    A=Thres(M, 0.1, 1, 1)
-    print(Efficiency(A))
+    A=Thres(M, 0.05, 1, 0)
+    Cp=Clustercoeff(A,Algorithm=1)
+    print(Cp)
+    print(Cp.mean())

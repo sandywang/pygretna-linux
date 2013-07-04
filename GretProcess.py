@@ -84,14 +84,16 @@ class GretProcess(Process):
                     node=Node(N, n, 'Lp')
                     R[node]=np.zeros(T)
                 if RandState:
-                    R['CpRand']=np.zeros(T)
-                    for n in range(N):
-                        node=Node(N, n, 'CpRand')
-                        R[node]=np.zeros(T)
-                    R['LpRand']=np.zeros(T)
-                    for n in range(N):
-                        node=Node(N, n, 'LpRand')
-                        R[node]=np.zeros(T)
+                    R['CpRand']=np.zeros([T, NumRand])
+                    #R['CpRand']=np.zeros(T)
+                    #for n in range(N):
+                    #    node=Node(N, n, 'CpRand')
+                    #    R[node]=np.zeros(T)
+                    R['LpRand']=np.zeros([T, NumRand])
+                    #R['LpRand']=np.zeros(T)
+                    #for n in range(N):
+                    #    node=Node(N, n, 'LpRand')
+                    #    R[node]=np.zeros(T)
 
             #Network - Efficiency
             if Mode[1]:
@@ -104,14 +106,16 @@ class GretProcess(Process):
                     node=Node(N, n, 'Eloc')
                     R[node]=np.zeros(T)
                 if RandState:
-                    R['EgRand']=np.zeros(T)
-                    for n in range(N):
-                        node=Node(N, n, 'EgRand')
-                        R[node]=np.zeros(T)
-                    R['ElocRand']=np.zeros(T)
-                    for n in range(N):
-                        node=Node(N, n, 'ElocRand')
-                        R[node]=np.zeros(T)
+                    R['EgRand']=np.zeros([T, NumRand])
+                    #R['EgRand']=np.zeros(T)
+                    #for n in range(N):
+                    #    node=Node(N, n, 'EgRand')
+                    #    R[node]=np.zeros(T)
+                    R['ElocRand']=np.zeros([T, NumRand])
+                    #R['ElocRand']=np.zeros(T)
+                    #for n in range(N):
+                    #    node=Node(N, n, 'ElocRand')
+                    #    R[node]=np.zeros(T)
 
             #Network - Assortativity
             if Mode[2]:
@@ -156,19 +160,7 @@ class GretProcess(Process):
                         Mode, Para,
                         t, Range[t],
                         R, queue)
-                print("Fork --> Subject: %s @ [Threshold: %2.2f] Real Network"\
-                    % (Subj, Range[t]))
-                queue.put("Done --> Subject: %s @ [Threshold: %2.2f] Real Network"\
-                    % (Subj, Range[t]))
-                p.start()
                 P.append(p)
-                while queue.full():
-                    #P.reverse()
-                    #P.pop().join()
-                    #P.reverse()
-                    for p in P:
-                        p.join()
-                    P=[]
                 if RandState:
                     for rn in range(NumRand):
                         p=RandProcess(M, Subj,
@@ -176,29 +168,35 @@ class GretProcess(Process):
                                 t, Range[t], 
                                 NumRand, rn,
                                 R, queue)
-                        print("Fork --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
-                            % (Subj, Range[t], rn+1))
-                        queue.put("Done --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
-                            % (Subj, Range[t], rn+1))
-                        p.start()
                         P.append(p)
-                        while queue.full():
-                            #P.reverse()
-                            #P.pop().join()
-                            #P.reverse()
-                            for p in P:
-                                p.join()
-                            P=[]    
+            #Start Process
+            for p in P:
+                p.start()
+
+            while not queue.empty():
+                pass
 
             for p in P:
                 p.join()
             
             if Mode[0] and RandState:
+                R['Cp_Z']=(R['Cp']-R['CpRand'].mean(axis=1))/\
+                        (R['CpRand'].std(axis=1))
+                R['CpRand']=R['CpRand'].mean(axis=1)
+                R['Lp_Z']=(R['Lp']-R['LpRand'].mean(axis=1))/\
+                        (R['LpRand'].std(axis=1))
+                R['LpRand']=R['LpRand'].mean(axis=1)
                 R['Gamma']=R['Cp']/R['CpRand']
                 R['Lambda']=R['Lp']/R['LpRand']
                 R['Sigma']=R['Gamma']/R['Lambda']
 
             if Mode[1] and RandState:
+                R['Eloc_Z']=(R['Lp']-R['ElocRand'].mean(axis=1))/\
+                        (R['ElocRand'].std(axis=1))
+                R['ElocRand']=R['ElocRand'].mean(axis=1)
+                R['Eg_Z']=(R['Eg']-R['EgRand'].mean(axis=1))/\
+                        (R['EgRand'].std(axis=1))
+                R['EgRand']=R['EgRand'].mean(axis=1)
                 R['GammaEff']=R['Eloc']/R['ElocRand']
                 R['LambdaEff']=R['Eg']/R['EgRand']
                 R['SigmaEff']=R['GammaEff']/R['LambdaEff']
@@ -245,6 +243,11 @@ class RealProcess(Process):
                 Para['ThresType'],
                 Para['IsNormalize'])
         N=M.shape[0]
+
+        self.Q.put("Done --> Subject: %s @ [Threshold: %2.2f] Real Network"\
+                % (self.Subj, self.Thr))
+        print("Fork --> Subject: %s @ [Threshold: %2.2f] Real Network"\
+                % (self.Subj, self.Thr))
 
         if State[0]:
             Cp=Clustercoeff(M, Para['ClusterAlgor'])
@@ -372,54 +375,56 @@ class RandProcess(Process):
         M=RandNet(M, Para['RandGen'])
         N=M.shape[0]
 
+        self.Q.put("Done --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
+                % (self.Subj, self.Thr, Nr+1))
+        print("Fork --> Subject: %s @ [Threshold: %2.2f] Random Network#%.4d"\
+                % (self.Subj, self.Thr, Nr+1))
+
         if State[0]:
             Cp=Clustercoeff(M, 
                     Para['ClusterAlgor'])
-            Cptmp=Cp/NumRand
-            Tmp=RDict['CpRand']
-            Tmp[NThr]+=Cptmp.mean()
-            RDict['CpRand']=Tmp
-            for n in range(N):
-                node=Node(N, n, 'CpRand')
-                Tmp=RDict[node]
-                Tmp[NThr]+=Cptmp[n]
-                RDict[node]=Tmp
+            tmp=RDict['CpRand']
+            tmp[NThr, Nr]=Cp.mean()
+            RDict['CpRand']=tmp
+            #for n in range(N):
+            #    node=Node(N, n, 'CpRand')
+            #    Tmp=RDict[node]
+            #    Tmp[NThr]+=Cptmp[n]
+            #    RDict[node]=Tmp
 
         if State[0] or State[1]:
             Eg=Efficiency(M)
             if State[0]:
                 Lp=np.zeros_like(Eg)
                 Lp[Eg!=0]=1/Eg[Eg!=0]
-                Lp=Lp/NumRand
-                Tmp=RDict['LpRand']
-                Tmp[NThr]+=(1/Eg.mean())/NumRand
-                RDict['LpRand']=Tmp
-                for n in range(N):
-                    node=Node(N, n, 'LpRand')
-                    Tmp=RDict[node]
-                    Tmp[NThr]+=Lp[n]
-                    RDict[node]=Tmp
+                tmp=RDict['LpRand']
+                tmp[NThr, Nr]=(1/Eg.mean())
+                RDict['LpRand']=tmp
+                #for n in range(N):
+                #    node=Node(N, n, 'LpRand')
+                #    Tmp=RDict[node]
+                #    Tmp[NThr]+=Lp[n]
+                #    RDict[node]=Tmp
             if State[1]:
-                Eg=Eg/NumRand
-                Tmp=RDict['EgRand']
-                Tmp[NThr]+=Eg.mean()
-                RDict['EgRand']=Tmp
-                for n in range(N):
-                    node=Node(N, n, 'EgRand')
-                    Tmp=RDict[node]
-                    Tmp[NThr]+=Eg[n]
-                    RDict[node]=Tmp
+                tmp=RDict['EgRand']
+                tmp[NThr, Nr]=Eg.mean()
+                RDict['EgRand']=tmp
+                #for n in range(N):
+                #    node=Node(N, n, 'EgRand')
+                #    Tmp=RDict[node]
+                #    Tmp[NThr]+=Eg[n]
+                #    RDict[node]=Tmp
 
         if State[1]:
-            Eloc=LocalEfficiency(M)/NumRand
-            Tmp=RDict['ElocRand']
-            Tmp[NThr]+=Eloc.mean()
-            RDict['ElocRand']=Tmp
-            for n in range(N):
-                node=Node(N, n, 'ElocRand')
-                Tmp=RDict[node]
-                Tmp[NThr]+=Eloc[n]
-                RDict[node]=Tmp
+            Eloc=LocalEfficiency(M)
+            tmp=RDict['ElocRand']
+            tmp[NThr, Nr]=Eloc.mean()
+            RDict['ElocRand']=tmp
+            #for n in range(N):
+            #    node=Node(N, n, 'ElocRand')
+            #    Tmp=RDict[node]
+            #    Tmp[NThr]+=Eloc[n]
+            #    RDict[node]=Tmp
 
         if State[2]:
             Ass=Assortativity(M)

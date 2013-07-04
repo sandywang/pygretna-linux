@@ -113,8 +113,11 @@ class TypeRadio(Frame):
         for key in range(len(Key)):
             Radiobutton(self, text=Key[key],
                     variable=var,
+                    command=self.OnPress,
                     value=key
                     ).pack(side=LEFT, expand=YES, fill=X)
+
+    def OnPress(self): pass
 
 class RandNetEntry(EntryFrame):
     def __init__(self, parent=None, 
