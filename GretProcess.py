@@ -191,7 +191,7 @@ class GretProcess(Process):
                 R['Sigma']=R['Gamma']/R['Lambda']
 
             if Mode[1] and RandState:
-                R['Eloc_Z']=(R['Lp']-R['ElocRand'].mean(axis=1))/\
+                R['Eloc_Z']=(R['Eloc']-R['ElocRand'].mean(axis=1))/\
                         (R['ElocRand'].std(axis=1))
                 R['ElocRand']=R['ElocRand'].mean(axis=1)
                 R['Eg_Z']=(R['Eg']-R['EgRand'].mean(axis=1))/\
